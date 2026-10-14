@@ -5,8 +5,9 @@ import express from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 
-import { API_PREFIX } from './config/constants';
+import { API_DOCS_PATH, API_NAME, API_PREFIX } from './config/constants';
 import { env } from './config/env';
+import { docsRouter } from './docs/docs.routes';
 import { NotFoundError } from './errors/not-found-error';
 import { errorHandler } from './middlewares/error-handler.middleware';
 import { adminRouter } from './modules/admin/admin.routes';
@@ -41,6 +42,17 @@ apiRouter.use('/admin', adminRouter);
 apiRouter.use(referenceDataRouter);
 
 app.use(API_PREFIX, apiRouter);
+
+if (env.ENABLE_API_DOCS) {
+  app.use(API_DOCS_PATH, docsRouter);
+}
+
+// A landing response for whoever opens the bare URL. The docs link is absolute so it is
+// clickable in a browser; req.protocol is correct behind a proxy thanks to 'trust proxy'.
+app.get('/', (req, res) => {
+  const docs = env.ENABLE_API_DOCS ? `${req.protocol}://${req.get('host')}${API_DOCS_PATH}` : null;
+  res.status(200).json({ data: { name: API_NAME, status: 'ok', docs } });
+});
 
 app.use(() => {
   throw new NotFoundError('Route not found');

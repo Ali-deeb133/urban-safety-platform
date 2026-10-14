@@ -16,6 +16,14 @@ const envSchema = z.object({
   SUPABASE_STORAGE_BUCKET: z.string().min(1),
   ADMIN_EMAIL: z.email(),
   ADMIN_PASSWORD: z.string().min(8),
+  // Serves /api-docs and its docs-only login. 'false' removes both; the API itself is unaffected.
+  ENABLE_API_DOCS: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
+  // Shared password of the public demo accounts (npm run seed:demo). It is printed on /api-docs,
+  // so it must never be reused anywhere. Unset: no demo accounts are shown.
+  DEMO_ACCOUNTS_PASSWORD: z.string().min(8).max(72).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

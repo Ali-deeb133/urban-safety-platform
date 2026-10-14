@@ -30,16 +30,29 @@ function serializeResponse(res: SerializedResponse): Record<string, unknown> {
   return { statusCode: res.statusCode };
 }
 
+// A direct logger call passes the Error itself. pino-http passes an error pino has already
+// serialized: `name` is usually gone there and `type` holds the class name. Either may be missing,
+// so neither is trusted to be a string.
+function errorClassName(err: Error): string | undefined {
+  const { name, type } = err as { name?: unknown; type?: unknown };
+  if (typeof type === 'string' && type !== 'Object') {
+    return type;
+  }
+  return typeof name === 'string' ? name : undefined;
+}
+
 // Prisma messages echo the values a query was given (descriptions, names), and the first lines
 // of the stack repeat the message. For Prisma errors only the name, code and stack frames remain.
 function serializeError(err: Error): SerializedError | Record<string, unknown> {
   const serialized = stdSerializers.err(err);
-  if (!err.name.startsWith('Prisma')) {
+  const className = errorClassName(err);
+  if (!className?.startsWith('Prisma')) {
     return serialized;
   }
-  const frames = (err.stack ?? '').split('\n').filter((line) => line.trimStart().startsWith('at '));
+  const stack = typeof err.stack === 'string' ? err.stack : '';
+  const frames = stack.split('\n').filter((line) => line.trimStart().startsWith('at '));
   return {
-    type: serialized.type,
+    type: className,
     code: 'code' in err ? err.code : undefined,
     stack: frames.join('\n'),
   };

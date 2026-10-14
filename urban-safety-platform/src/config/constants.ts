@@ -1,6 +1,8 @@
 import { ReportStatus, Role } from '@prisma/client';
 
+export const API_NAME = 'Urban Safety Reporting Platform API';
 export const API_PREFIX = '/api/v1';
+export const API_DOCS_PATH = '/api-docs';
 
 export const PAGINATION_DEFAULT_LIMIT = 20;
 export const PAGINATION_MAX_LIMIT = 100;
